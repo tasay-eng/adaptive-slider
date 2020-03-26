@@ -1,0 +1,28 @@
+.eclecticSlider{
+    position: absolute;
+    width: 200px;
+    height: 12px;
+    box-sizing: border-box;
+    top: 30%;
+    left: 40%;
+}        
+#slider-field {
+    position: relative;
+    background: linear-gradient(180deg, #6FCF97 0%, #66D2EA 100%);
+    border: 1px solid rgba(31, 32, 65, 0.25);
+    height: 4px;
+    width: 200px;
+    border-radius: 3px;
+    margin: 0 0 13.56px 0;
+}
+
+#runner, #runner-1, #runner-2 {
+    position: absolute;
+    background: red;
+    width: 13px;
+    height: 13px;
+    border: 2px solid #FFFFFF;
+    border-radius: 10px;
+    top: -6.5px;
+}
+    
