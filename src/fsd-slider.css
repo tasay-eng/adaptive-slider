@@ -1,0 +1,67 @@
+.eclecticSlider{
+    position: absolute;
+    width: 200px;
+    height: 12px;
+    box-sizing: border-box;
+    top: 30%;
+    left: 40%;
+}        
+#slider-field {
+    position: relative;
+    background: linear-gradient(180deg, #6FCF97 0%, #66D2EA 100%);
+    border: 1px solid rgba(31, 32, 65, 0.25);
+    height: 4px;
+    width: 200px;
+    border-radius: 3px;
+    margin-top: 35px;
+}
+.val-changer {
+    top: 30px;
+    right: 94%;
+    position: absolute;
+    height: 35px;
+    width: 16px;
+    background-color: transparent;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+.runner {
+    position: absolute;
+    background-color: red;
+    width: 13px;
+    height: 13px;
+    border: 2px solid #FFFFFF;
+    border-radius: 10px;
+    bottom: 0;
+    z-index: 1000;
+}
+.change-number{
+    position: absolute;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+    color: rgb(41, 34, 34);
+    z-index: 1000;
+    shape-outside: ellipse(); 
+    clip-path: ellipse(); 
+    background: palevioletred;
+}
+
+#interval-button {
+    position: relative;
+    background: blueviolet;
+    width: 46%;
+    height: 20px;
+    border: 2px solid #FFFFFF;
+    border-radius: 5px;
+}
+#range-button{
+    position: relative;
+    background: rgb(162, 136, 187);
+    width: 46%;
+    height: 20px;
+    border: 2px solid #FFFFFF;
+    border-radius: 5px;
+}
+
+    
