@@ -1,88 +1,56 @@
 class Model {
-    coords: {
-        line_coords: DOMRect,
-        elem_coords: DOMRect,
-        delta: number,
-        sibs_coords?: DOMRect
-    } 
-    min: number
-    max: number
+    min: number = 0
+    max: number = 100
+    step: number = 1
+    defaultValue = (this.max < this.min) ? this.min : this.min + (this.max - this.min)/2;
+
     constructor() {
-        this.setStartingRange()
-        this.setStartCoords()
-    }
-    
-    resetCoords(e: MouseEvent, elem?): void {
-        this.coords = {
-            line_coords: document.querySelector('#slider-field').getBoundingClientRect(),
-            elem_coords: (<HTMLDivElement>(<HTMLSpanElement>e.target).parentNode).getBoundingClientRect(),
-            delta: e.clientX - (<HTMLDivElement>(<HTMLSpanElement>e.target).parentNode).getBoundingClientRect().left,
-        } 
 
-        if ((<HTMLSpanElement>e.target).id === 'runner-1' && <HTMLDivElement>(<HTMLSpanElement>e.target).nextSibling){
-            this.coords.sibs_coords = (<HTMLDivElement>(<HTMLDivElement>(<HTMLSpanElement>e.target).parentNode).nextSibling).getBoundingClientRect()
-    
-        }
-        else if ((<HTMLSpanElement>e.target).id === 'runner-2'){
-            this.coords.sibs_coords = (<HTMLDivElement>(<HTMLDivElement>(<HTMLSpanElement>e.target).parentNode).previousSibling).getBoundingClientRect()
-   
-        }
- 
     }
-    setStartCoords(){
-        this.coords= {
-            line_coords: document.querySelector('#slider-field').getBoundingClientRect(),
-            elem_coords: document.querySelector('#runner-1').getBoundingClientRect(),
-            delta: 0
+
+    parseNumber(val){
+        if (Number.isSafeInteger(this.step)){
+            val = parseInt(val)
+        }
+        else{
+            val = parseFloat(val)
         }
     }
 
-    setStartingRange(){
-        this.min = 0
-        this.max = 100
-    }
-    
-    get _resCoords(){
-        return this.coords
-    }
-    
-    moveAt(e: MouseEvent){
-        let coords = this._resCoords
-        if ((<HTMLSpanElement>e.target).classList.contains('runner')){
-            console.log(coords)
-            let pre = parseFloat((e.pageX - coords.delta - coords.line_coords.left).toString());
-            let check = (pre >= -5 && pre <=(coords.line_coords.width - coords.elem_coords.width))
-            if ((<HTMLSpanElement>e.target).id === 'runner-1' && check){
-    
-                if (coords.sibs_coords){ 
-                    let pre_run1 = coords.sibs_coords.left - coords.elem_coords.width;
-                    if (pre < pre_run1) (<HTMLSpanElement>e.target).style.left = pre +'px';
-                }
-                else {
-                    (<HTMLDivElement>(<HTMLSpanElement>e.target).parentNode).style.left = pre +'px';
+    countMoveAt(id: string, coords, value?, pageX?){
+        let pre;
+        let delta;
+        console.log(coords.contain_1.left, 1)
+        pre = (value && value != null) ? value : (pageX - delta - coords.line_coords.left)
+        if (id === 'run-contain-1'){
+            delta = coords.delta_1
+            pre = this.parseNumber(pre*this.step)
+            if (pre >= this.min && pre <=this.max){ 
+                if(coords.contain_2){
+                    if (pre <= (coords.contain_2.left - coords.contain_2.width)) this.defaultValue = pre; return pre;
+                }else {
+                    this.defaultValue = pre
+                    return pre;
                 }
             }
-            else if ((<HTMLSpanElement>e.target).id === 'runner-2' && check){
-                let pre_run2 = coords.sibs_coords.left + coords.elem_coords.width
-                if (pre > pre_run2) (<HTMLDivElement>(<HTMLSpanElement>e.target).parentNode).style.left = pre +'px';
+        }
+        else{
+            delta = coords.delta_2
+            pre = this.parseNumber(pre*this.step)
+            if (pre>=this.min && pre <=this.max && pre >= (coords.contain_1.right)) {
+                this.defaultValue = pre
+                return pre;
             }
         }
     }
-    countNumber(){
-        let coords = this._resCoords
-        console.log(coords, 2)
-        console.log(coords.elem_coords.left, coords.line_coords.left, coords.line_coords.width, 3)
-        let num = parseInt(((coords.elem_coords.left - coords.line_coords.left)/coords.line_coords.width) * (this.max))
-        console.log(num, 4)
-        return num
+    
+    countNumber(id: string, coords){
+        let run_cor: DOMRect;
+        if (id === 'run-contain-1') run_cor = coords.contain_1;
+        else run_cor = coords.contain_2;
+        this.defaultValue = parseInt(this.min+((run_cor.left - coords.line_coords.left)*this.max * this.step/(coords.line_coords.width)))
+        return this.defaultValue
     }
-
-    onMouseDown(e: MouseEvent) {
-        if ((<HTMLSpanElement>e.target).classList.contains('runner')){
-            this.resetCoords(e)
-            this.moveAt(e)
-        }
-    } 
 }
 
 class View {
@@ -90,12 +58,22 @@ class View {
     field: HTMLDivElement;
     interval_button: HTMLButtonElement;
     range_button: HTMLButtonElement;
-    run_container1: HTMLDivElement;
-    run_container2: HTMLDivElement;
-    run1: HTMLSpanElement;
-    run2: HTMLSpanElement;
-    runs_array: NodeListOf<Element>;
-    
+    run_contain_1: HTMLDivElement;
+    run_contain_2: HTMLDivElement;
+    run_1: HTMLSpanElement;
+    run_2: HTMLSpanElement;
+    input_1: HTMLInputElement;
+    input_2: HTMLInputElement;
+    coords: {
+        line_coords: DOMRect,
+        contain_1: DOMRect,
+        delta_1: number,
+        contain_2?: DOMRect,
+        delta_2?: number,
+    }
+    input_val_1 = 'write your value'
+    input_val_2 = 'write your second value'
+
     constructor() {
         this.form = document.querySelector('.eclecticSlider')
         this.field = document.createElement('div')
@@ -109,124 +87,213 @@ class View {
         this.range_button.id = 'range-button'
         this.range_button.textContent = 'add numbers'
 
-        this.run_container1 = document.createElement('div')
-        this.run_container1.classList.add('val-changer')
-        this.run_container1.id = 'run-contain-1'
-        this.run1 = document.createElement('span')
-        this.run1.classList.add('runner')
-        this.run1.id = 'runner-1'
-        this.run_container1.append(this.run1)
-        this.form.append(this.interval_button, this.range_button, this.field, this.run_container1)
+        this.input_1 = document.createElement('input')
+        this.input_1.value = (this.input_val_1).toString()
+        this.input_1.classList.add('input_for_slider')
+        this.input_1.id = 'input_for_1'
 
-    }
+        this.run_contain_1 = document.createElement('div')
+        this.run_contain_1.classList.add('run-container')
+        this.run_contain_1.id = 'run-contain-1'
+        this.run_1 = document.createElement('span')
+        this.run_1.classList.add('runner')
+        this.run_1.id = 'runner-1'
+        this.run_contain_1.append(this.run_1)
+        this.field.append(this.run_contain_1)
+        this.form.append(this.interval_button, this.range_button, this.field, this.input_1)
 
-    bindOnMouseDown(handler_down, handler_move, count_num, change_text){
-        this.form.onmouseover = function(e: MouseEvent){
-            if ((<HTMLSpanElement>e.target).classList.contains('runner')){
-                (<HTMLDivElement>(<HTMLSpanElement>e.target).parentNode).ondragstart = function(e) {
-                    return false;
-                }
-                handler_down(e)
-                document.onmousemove = function(e: MouseEvent) { 
-                    handler_move(e); 
-                    if ((<HTMLSpanElement>e.target).classList.contains('runner') && (<HTMLSpanElement>e.target).previousSibling) {
-                        let num = count_num()
-                        console.log(num, 5)
-                        change_text(<HTMLSpanElement>(<HTMLSpanElement>e.target).previousSibling, num)
-                    }
-                }
-                e.target.onmouseup = function(e: MouseEvent) {
-                    document.onmousemove = null
-                    e.target.onmouseup = null;
-                }
-            }
-        }    
+        this.setStartCoords()
     }
-
-    bindAddLegend(display_nums, define, count_nums){
-        this.range_button.addEventListener('click', function(e){ 
-            e.preventDefault();
-            
-            this.textContent = (this.textContent === 'add numbers') ? 'remove numbers' : 'add numbers'
-            let runs_array = define()
-            display_nums(runs_array, count_nums)
-        })  
-    }
-
-    get buttonValue(){
-        return this.interval_button.value
-    }
-       
-    addRunner(button: HTMLButtonElement, form: HTMLFormElement): void{
-        if (button.textContent === 'go to single'){
-            const run2: HTMLSpanElement = document.createElement('span')
-            const run1: HTMLSpanElement = document.querySelector('#runner-1')
-            const run_container1: HTMLDivElement = document.querySelector('#run-contain-1')
-            const run_container2: HTMLDivElement = document.createElement('div')
-            run_container2.id = 'run-contain-2'
-            run_container2.classList.add('val-changer')
-            run2.id = 'runner-2'
-            run2.classList.add('runner')
-            run_container2.style = run_container1.style
-            run_container2.style.right = (-5).toString()
-            run2.style = run1.style
-            run_container2.append(run2)
-            form.append(run_container2)
-        }
-        else{
-            if(form.lastChild.id === 'run-contain-2') {
-                form.removeChild(form.lastChild);
-            }
+    inputs_array: NodeListOf<Element> = document.querySelectorAll('.run-container')
+    runs_array: NodeListOf<Element> = document.querySelectorAll('.input_for_slider')
+    
+    setStartCoords(){
+        this.coords= {
+            line_coords: this.field.getBoundingClientRect(),
+            contain_1: this.run_contain_1.getBoundingClientRect(),
+            delta_1: 0
         }
     }
-    defineNodelist(){
-        this.runs_array = document.querySelectorAll('.val-changer')
+
+    get _returnRuns(){
         return this.runs_array
     }
-    changeTextContent(elem, val1, val2?){
-        if (val1 && val2){
-            elem.textContent = val1 ? val2 : val1
-        }else if(val1){
-            elem.textContent = val1
+
+    get _returnInputs(){
+        return this.inputs_array
+    }
+
+    resetCoords(e: MouseEvent){
+        this.coords = {
+            line_coords: this.field.getBoundingClientRect(),
+            contain_1: this.run_contain_1.getBoundingClientRect(),
+            delta_1: e.clientX - this.run_contain_1.getBoundingClientRect().left 
+        } 
+        if (this.run_contain_2){
+            this.coords.contain_2 = this.run_contain_2.getBoundingClientRect()
+            this.coords.delta_2 = e.clientX - this.run_contain_2.getBoundingClientRect().left 
+    
+        }
+        console.log(this.coords, 1)
+        return this.coords
+    }
+
+    get _coordsElem(){
+        return this.coords
+    }
+    
+    changeRunsNums(val, run){
+        if (run.firstChild.classList.contains('val-changer')) run.firstChild.textContent = val;
+    }
+    changeInputVal(val, index){
+        if(this._returnInputs) this._returnInputs[index].value = val
+    }
+
+    bindChangeInputValue(handle_move){
+        this.form.addEventListener('input', (e)=>{
+            if (e.target.classList.contains('input_for_slider')){
+                this._returnInputs.forEach((inp: HTMLInputElement, index)=>{
+                    let runs_array = this._returnRuns
+                    let lf = handle_move(runs_array[index].id, this._coordsElem, inp.value)
+                    if (typeof lf === 'number'){
+                        runs_array[index].style.left = lf;
+                        this.changeRunsNums(inp.value, runs_array[index])
+                    }
+                })
+            }
+        })
+    }
+
+    moveRuns(handler_move){
+        console.log(this.defineRuns(), 12)
+        this._returnRuns.forEach((run: HTMLDivElement, index)=>{
+            run.onmousedown = (e: MouseEvent)=>{
+                run.ondragstart = (e: MouseEvent)=>{
+                    return false;
+                }
+                let coords = this.resetCoords(e)
+                document.onmousemove = (e: MouseEvent)=>{ 
+                    console.log(coords, 2)
+                    let lf = handler_move(run.id, coords, null, e.pageX)
+                    if (typeof lf === 'number'){
+                        console.log(lf, 4)
+                        run.style.left = lf + 'px';
+                    } 
+                    coords = this.resetCoords(e)
+                    let val = handler_move(run.id, coords)
+                    this.changeInputVal(val, index)
+                    this.changeRunsNums(val, run)
+                }
+                document.onmouseup = (e: MouseEvent)=>{
+                    document.onmousemove = null
+                    document.onmouseup = null;
+                }
+            }
+        })
+    }
+
+    bindAddLegend(handle_move){
+        this.range_button.addEventListener('click', (e)=>{ 
+            e.preventDefault();
+            
+            e.target.textContent = (e.target.textContent === 'add numbers') ? 'remove numbers' : 'add numbers'
+            this.addRemoveNumsButton(handle_move)
+        })  
+    }
+       
+    addRemoveRunner(): void{
+        if (this.interval_button.textContent === 'go to single'){
+            this.run_2 = document.createElement('span');
+            this.run_contain_2 = document.createElement('div')
+            this.run_contain_2.classList.add('run-container')
+            this.run_contain_2.id = 'run-contain-2'
+            this.run_contain_2.style = this.run_contain_1.style
+            this.run_contain_2.style.right = (0).toString()
+            this.run_2.classList.add('runner')
+            this.run_2.id = 'runner-2'
+            this.run_2.value = this.input_val_2
+            this.run_2.style = this.run_1.style
+            this.run_contain_2.append(this.run_2)
+            this.field.append(this.run_contain_2)
+        }
+        else {
+            if(this.field.lastChild.id === 'run-contain-2') {
+                this.field.removeChild(this.field.lastChild);
+            }   
         }
     }
 
-    bindSlidersAdd(add_run, display_nums, define, count_num){
-        this.interval_button.addEventListener('click', function(e){
+    addRemoveInput(): void{
+        if (this.interval_button.textContent === 'go to single'){
+            console.log(111)
+            this.input_2 = document.createElement('input')
+            this.input_2.classList.add('input_for_slider')
+            this.input_2.id = 'input_for_2'
+            this.input_2.style = this.input_1.style
+            this.input_2.style.left = (30).toString()
+            this.form.append(this.input_2)
+        }
+        else{
+            if(this.form.lastChild.id === 'input_for_2') this.form.removeChild(this.form.lastChild)
+        }
+    }
+    defineRuns(){
+        this.runs_array = document.querySelectorAll('.run-container')
+        return this.runs_array
+    }
+    defineInputs(){
+        this.inputs_array = document.querySelectorAll('.run-container')
+        return this.inputs_array
+    }
+    changeTextContent(elem, val1, val2?){
+        if (val1){
+            if (val2){
+                elem.textContent = val1 ? val2 : val1
+            }else {
+                elem.textContent = val1
+            }
+        }
+    }
+
+    bindSlidersAdd(handler_move){
+        this.interval_button.addEventListener('click', (e)=>{
             e.preventDefault();
             
-            this.textContent = (this.textContent === 'go to range') ? 'go to single' : 'go to range'
-            add_run(e.target, (<HTMLButtonElement>e.target).parentNode) 
-            let runs_array = define()
-            display_nums(runs_array, count_num)
+            e.target.textContent = (e.target.textContent === 'go to range') ? 'go to single' : 'go to range';
+            this.addRemoveRunner()
+            this.addRemoveInput()
+            this.defineRuns()
+            this.defineInputs()
+            this.moveRuns(handler_move)
+            this.addRemoveNumsButton(handler_move)
         
         })
     }
-    setStartingButton(val, text){
-        this.interval_button.value = val
-        this.interval_button.textContent = text
+    addNums(){
+        this._returnRuns.forEach((run, index)=>{
+            const span = document.createElement('span')
+            span.innerText = handler_move(run.id, this._coordsElem)
+            span.id = 'current-number'+index
+            span.classList.add('change-number')
+        
+            run.prepend(span)                   
+        })
     }
 
-    displayNums(runs_array, count_num){
-        if(this.range_button.textContent === "remove numbers"){
-            runs_array.forEach((run, index)=>{
-                console.log(runs_array)
-                console.log(run)
+    addRemoveNumsButton(handler_move){
+        if(this.range_button.textContent === 'remove numbers'){
+            console.log(11);
+            this._returnRuns.forEach((run, index)=>{
                 const span = document.createElement('span')
-    
-                span.innerText = count_num()
-                console.log(span.innerText, 6)
+                span.innerText = handler_move(run.id, this._coordsElem)
                 span.id = 'current-number'+index
                 span.classList.add('change-number')
-    
+        
                 run.prepend(span)
                     
             })
         }else{
-            runs_array.forEach((run)=>{
-                console.log(runs_array)
-                console.log(run)
-                console.log(run.firstChild)
+            this._returnRuns.forEach((run)=>{
                 if (run.firstChild.classList.contains('change-number')) run.removeChild(run.firstChild);
             })
         }
@@ -240,34 +307,40 @@ class Controller{
         this.view = view
         this.model = model
         
-        this.view.setStartingButton('single', 'go to range')
-        this.view.bindSlidersAdd(this.handleAddRunner, this.handleDisplayNumber, this.handleDefineRuns, this.handleCountNum)
-        this.view.bindOnMouseDown(this.handleOnMouseDown, this.handleMoveAt, this.handleCountNum, this.handleChangeText)
-        this.view.bindAddLegend(this.handleDisplayNumber, this.handleDefineRuns, this.handleCountNum)
+        this.view.moveRuns(this.handleCountMoveAt)
+        this.view.bindChangeInputValue(this.handleCountMoveAt)
+        this.view.bindSlidersAdd(this.handleCountMoveAt)
+        this.view.bindAddLegend(this.handleCountMoveAt)
     }
-    handleOnMouseDown = (e) => {
-        this.model.onMouseDown(e)
+    handleMoveRuns=(handler_move)=>{
+        this.view.moveRuns(handler_move)
     }
-    handleMoveAt = (e) => {
-        this.model.moveAt(e)
+    handleCountMoveAt = (id, coords, value?, pageX?) => {
+        return this.model.countMoveAt(id, coords, value, pageX)
     }
-    handleAddRunner=(val, form)=>{
-        this.view.addRunner(val, form)
+    handleResetCoords=(e)=>{
+        return this.view.resetCoords(e)
+    }
+    handleAddRemoveRunner=()=>{
+        this.view.addRemoveRunner()
+    }
+    handleGetCoords(){
+        return this.view._coordsElem
+    }
+    handleAddRemoveInput=()=>{
+        this.view.addRemoveInput()
     }
     handleDefineRuns=()=>{
-        return this.view.defineNodelist()
+        return this.view.defineRuns()
     }
-    handleDisplayNumber=(runs_array, count_num)=>{
-        this.view.displayNums(runs_array, count_num)
+    handleDefineInputs=()=>{
+        return this.view.defineInputs()
     }
-    handleGetButtonValue(){
-        return this.view.buttonValue
+    handleAddLegend=(count_num)=>{
+        this.view.bindAddLegend(count_num)
     }
-    handleAddLegend=(display_nums, define, count_num)=>{
-        this.view.bindAddLegend(display_nums, define, count_num)
-    }
-    handleCountNum=()=>{
-        return this.model.countNumber()
+    handleCountNum=(coords, id)=>{
+        return this.model.countNumber(coords, id)
     }
     handleChangeText=(elem, val1, val2?)=>{
         this.view.changeTextContent(elem, val1, val2)

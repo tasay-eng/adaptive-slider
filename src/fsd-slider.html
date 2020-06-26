@@ -2,10 +2,15 @@
     <head>
         <title>FSD slider plugin</title>
         <link rel="stylesheet" href='fsd-slider.css'>
+        <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
     </head>
     <body>
-        <form class='eclecticSlider'></form>
-        
-        <script type='text/javascript' src="../built/fsd-slider.js"></script>
+        <form class='formEclectic'></form>
+        <script type='text/javascript'> 
+            $( function() {
+                $('.formEclectic').eclecticSlider('handleSliderActive');
+            } );    
+        </script>
+        <script type='text/javascript' src='../built/jquery-style.js'></script>
     </body>
 </html>
