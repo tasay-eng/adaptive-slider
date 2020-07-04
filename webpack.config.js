@@ -1,11 +1,12 @@
 const path = require('path')
+const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 module.exports = {
   entry: {
     app: './src/app.ts'
   },
-  devtool: 'eval-source-map',
+  devtool: 'cheap-module-eval-source-map',
   module: {
     rules: [
       {
@@ -17,6 +18,8 @@ module.exports = {
         test: /\.less$/,
         exclude: /node_modules/,
         use: [
+            {loader: 'style-loader',
+            },
              MiniCssExtractPlugin.loader,
             {loader: 'css-loader',
             },
@@ -44,7 +47,7 @@ module.exports = {
   },
   output: {
     filename: '[name].js',
-    path: path.resolve(__dirname, './dist'),
+    path: path.resolve(__dirname, './docs'),
     publicPath: './'
   },
   devServer: {
@@ -52,6 +55,7 @@ module.exports = {
     stats: 'errors-only'
   },
   plugins: [
+    new webpack.SourceMapDevToolPlugin({}),
     new HtmlWebpackPlugin({
       hash: false,
       template: './src/modules/fsd-slider.pug',

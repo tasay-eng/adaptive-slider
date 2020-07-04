@@ -46,29 +46,28 @@
 }
 .change-number{
     position: absolute;
-    padding-bottom: 5px;
+    padding-bottom: 10px;
     margin-bottom: 10px;
     color: rgb(41, 34, 34);
     z-index: 1000;
-    shape-outside: ellipse(); 
-    clip-path: ellipse(); 
-    width: 13px;
+    border-top-left-radius: 50%;
+    border-top-right-radius: 50%;
+    height: 13px;
+    width: 0px;
     text-align: center;
-    background: palevioletred;
+    background: #ad9797;
 }
 
 #interval-button {
     position: relative;
-    background: blueviolet;
-    width: 46%;
+    background: rgb(206, 183, 226);
     height: 20px;
     border: 2px solid #FFFFFF;
     border-radius: 5px;
 }
 #range-button{
     position: relative;
-    background: rgb(162, 136, 187);
-    width: 46%;
+    background:  rgb(206, 183, 226);
     height: 20px;
     border: 2px solid #FFFFFF;
     border-radius: 5px;

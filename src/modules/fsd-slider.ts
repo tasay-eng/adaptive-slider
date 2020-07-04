@@ -1,14 +1,20 @@
 class Model {
         defaultValue_1: number
         defaultValue_2?: number
-    
+        min: number
+        max: number
+        step: number
+
         constructor() {
             this.defaultValue_1 = 0
             this.defaultValue_2 = 100
+            this.min = 0
+            this.max = 100
+            this.step = 1
         }
     
-        parseNumber(val, step){
-            if (Number.isSafeInteger(step)){
+        parseNumber(val){
+            if (Number.isSafeInteger(this.step)){
                 val = parseInt(val)
             }
             else{
@@ -17,34 +23,34 @@ class Model {
             return val
         }
         
-        countNumber(id: string, coords, min, max, step){
+        countNumber(id: string, coords){
             if (id === 'run-contain-1') {
-                this.defaultValue_1 = this.parseNumber((min+((coords.contain_1.left - coords.line_coords.left)*max * step/(coords.line_coords.width))), step)
+                this.defaultValue_1 = this.parseNumber(this.min+((coords.contain_1.left - coords.line_coords.left)*this.max * this.step/(coords.line_coords.width)))
                 return this.defaultValue_1
             }
             else {
-                this.defaultValue_2 = this.parseNumber((min+((coords.contain_2.left - coords.line_coords.left)*max * step/(coords.line_coords.width))), step)
+                this.defaultValue_2 = this.parseNumber(this.min+((coords.contain_2.left - coords.line_coords.left)*this.max * this.step/(coords.line_coords.width)))
                 return this.defaultValue_2
             }
         }
 
-        checkValue(id, coords, min, max, step, value){
+        checkValue(id, coords, value, len){
             let res; 
-            if(value%step === 0){
+            if(value%this.step === 0){
                 res = value;                                   
             }else{
-                if(value%step >= step/2) {res = step*(value/step + 1);}
-                else {res = step*(value/step - 1);}
+                if(value%this.step >= this.step/2) {res = this.step*(value/this.step + 1);}
+                else {res = this.step*(value/this.step - 1);}
             }
 
-            if(res>max){
-                res = max
-            }else if(res<min){
-                res = min
+            if(res>this.max){
+                res = this.max
+            }else if(res<this.min){
+                res = this.min
             }
             
-            if (id === 'input_for_1' && res!==max && res!==min) {
-                if(coords.contain_2){
+            if (id === 'input_for_1' && res!==this.max && res!==this.min) {
+                if(len > 1){
                     if(res < this.defaultValue_2){
                         this.defaultValue_1 = res
                     }else{
@@ -55,7 +61,7 @@ class Model {
                 }
                 return this.defaultValue_1
 
-            }else if(id === 'input_for_2' && res!==max && res!==min) {
+            }else if(id === 'input_for_2' && res!==this.max && res!==this.min) {
                 if(res > this.defaultValue_1){
                     this.defaultValue_2 = res
                 }else{
@@ -65,8 +71,8 @@ class Model {
             }
         }
 
-        countRunnersCoords(val, coords, min, max, step){
-            let run_left = (val - min) * coords.line_coords.width/(max*step)
+        countRunnersCoords(val, coords){
+            let run_left = (val - this.min) * coords.line_coords.width/(this.max*this.step)
             return run_left;
         }
     }
@@ -83,6 +89,7 @@ class View {
         input_1: HTMLInputElement;
         input_2: HTMLInputElement;
         empty_field: HTMLDivElement;
+        current_number_1: HTMLSpanElement;
         coords: {
             line_coords: ClientRect,
             contain_1: ClientRect,
@@ -97,6 +104,7 @@ class View {
 
     
         constructor() {
+
             this.field = document.createElement('div')
             this.field.id = 'slider-field'
             
@@ -126,23 +134,27 @@ class View {
             this.run_contain_1.append(this.run_1)
             this.field.append(this.run_contain_1)
 
+            this.form = document.querySelector('.formEclectic')
+            this.form.append(this.interval_button, this.range_button, this.field, this.input_1)
+
+            this._setStartCoords()
+
             this._runs_array = document.querySelectorAll('.run-container')
             this._inputs_array= document.querySelectorAll('.input_for_slider')
-
-            this.asynCreateForm()
-            
-            this._setStartCoords()
         }
 
 
 
-        asynCreateForm(){
+        _asynCreateForm(){
             new Promise(function(resolve, reject) {
                 setTimeout(() => resolve(), 1000);
             }).then(
                 result => {
                     this.form = document.querySelector('.formEclectic')
                     this.form.append(this.interval_button, this.range_button, this.field, this.input_1)
+                    
+                    console.log(this._runs_array, 15)
+                    console.log(this._returnRuns, 155)
                 }
             )
         }
@@ -163,6 +175,18 @@ class View {
         get _returnInputs(){
             return this._inputs_array
         }
+
+        _cleanCoords(){
+            this.coords= {
+                line_coords: this.field.getBoundingClientRect(),
+                contain_1: this.run_contain_1.getBoundingClientRect(),
+                delta_1: 0
+            }
+            if (this._returnRuns.length > 1){
+                this.coords.contain_2 = this.run_contain_2.getBoundingClientRect()
+                this.coords.delta_2 = 0
+            }
+        }
     
         _resetCoords(e: MouseEvent){
             this.coords = {
@@ -173,7 +197,6 @@ class View {
             if (this._returnRuns.length > 1){
                 this.coords.contain_2 = this.run_contain_2.getBoundingClientRect()
                 this.coords.delta_2 = e.clientX - this.run_contain_2.getBoundingClientRect().left 
-        
             }
             return this.coords
         }
@@ -183,10 +206,8 @@ class View {
             if(id === 'run-contain-1') {
                 res = this.coords.contain_1.left 
                 pre = parse_num(((pageX - this.coords.delta_1 - this.coords.line_coords.left)*step), step)
-                console.log(pre)
-                console.log(this.coords)
                 if (pre >=0 && pre <= (this.coords.line_coords.width)){ 
-                    if(this.coords.contain_2){
+                    if(this._returnRuns.length > 1){
                         if (pre <= (this.coords.contain_2.left - this.coords.contain_2.width - this.coords.line_coords.left)) res = pre;
                     }else {
                         res = pre;
@@ -197,7 +218,6 @@ class View {
                 res = this.coords.contain_2.left
                 pre = parse_num(((pageX - this.coords.delta_2 - this.coords.line_coords.left)*step), step)
                 if (pre <= (this.coords.line_coords.width - this.coords.contain_2.width) && pre >= (this.coords.contain_1.right - this.coords.line_coords.left)) {
-                    console.log(pre, 4)
                     res = pre;
                 }
             }
@@ -216,8 +236,8 @@ class View {
         }
     
         bindChangeInputValue(check_val, coords_from_input){
-            this._returnInputs.forEach((inp: HTMLInputElement, index)=>{inp.addEventListener('input', (e)=>{
-                let correct_val = check_val(inp.id, this.coords, inp.value)
+            this._inputs_array.forEach((inp: HTMLInputElement, index)=>{inp.addEventListener('input', (e)=>{
+                let correct_val = check_val(inp.id, this.coords, inp.value, this._inputs_array.length)
                 inp.value = correct_val
                 let lf = coords_from_input(correct_val, this.coords)
                 this._runs_array[index].style.left = lf;
@@ -226,22 +246,23 @@ class View {
         }
     
         moveRuns(count_val, parse_num, step){
-            this._returnRuns.forEach((run: HTMLDivElement, index)=>{
+            console.log(this._runs_array, 17)
+            console.log(this._returnRuns, 177)
+            this._runs_array.forEach((run: HTMLDivElement, index)=>{
+                console.log(run, 133)
                 run.onmousedown = (e: MouseEvent)=>{
                     run.ondragstart = (e: MouseEvent)=>{
                         return false;
                     }
-                    let coords = this._resetCoords(e)
                     document.onmousemove = (e: MouseEvent)=>{ 
                         let lf = this._countMoveAt(run.id, e.pageX, parse_num, step)
-                        console.log(lf, 5)
-                        if(typeof lf === 'number'){
-                            run.style.left = lf + 'px';
-                            coords=this._resetCoords(e)
-                            let val = count_val(run.id, coords)
-                            this._changeInputVal(val, index)
-                            this._changeRunsNums(val, run)
-                        }
+
+                        run.style.left = lf + 'px';
+                        let coords = this._resetCoords(e)
+                        let val = count_val(run.id, coords)
+                        this._changeInputVal(val, index)
+                        this._changeRunsNums(val, run)
+
                     }
                     document.onmouseup = (e: MouseEvent)=>{
                         document.onmousemove = null
@@ -256,11 +277,11 @@ class View {
                 e.preventDefault();
                 
                 this.range_button.textContent = (this.range_button.textContent === 'add numbers') ? 'remove numbers' : 'add numbers';
-                this.addRemoveNums(count_num)
+                this._addRemoveNums(count_num)
             })  
         }
 
-        addRunner(){
+        _addRunner(){
             this.run_2 = document.createElement('span');
             this.run_contain_2 = document.createElement('div')
             this.run_contain_2.classList.add('run-container')
@@ -275,9 +296,9 @@ class View {
             this.field.append(this.run_contain_2)
         }
            
-        addRemoveRunner(): void{
+        _addRemoveRunner(): void{
             if (this.interval_button.textContent === 'go to single'){
-                this.addRunner()
+                this._addRunner()
             }
             else {
                 if(this.field.lastChild.id === 'run-contain-2') {
@@ -295,7 +316,7 @@ class View {
             this.form.append(this.input_2)
         }
     
-        addRemoveInput(): void{
+        _addRemoveInput(): void{
             if (this.interval_button.textContent === 'go to single'){
                 this._addInput()
             }
@@ -306,11 +327,9 @@ class View {
 
         _defineRuns(){
             this._runs_array = document.querySelectorAll('.run-container')
-            return this._runs_array
         }
         _defineInputs(){
             this._inputs_array = document.querySelectorAll('.input_for_slider')
-            return this._inputs_array
         }
     
         bindSlidersAdd(count_val, check_val, parse_num, coords_from_input, step){
@@ -318,45 +337,64 @@ class View {
                 e.preventDefault();
                 
                 this.interval_button.textContent = (this.interval_button.textContent === 'go to range') ? 'go to single' : 'go to range';
-                this.addRemoveRunner()
-                this.addRemoveInput()
+                this._addRemoveRunner()
+                this._cleanCoords()
+                this._addRemoveInput()
                 this._defineRuns()
                 this._defineInputs()
                 this.moveRuns(count_val, parse_num, step)
-                this.addRemoveNums(count_val)
+                this._addRemoveNums(count_val)
                 this.bindChangeInputValue(check_val, coords_from_input)
             
             })
         }
 
-        addNums(count_num){
+        _addNums(count_num){
             this._returnRuns.forEach((run, index)=>{
-                const span = document.createElement('span')
-                span.innerText = count_num(run.id, this._coordsElem)
-                span.id = 'current-number'+index
-                span.classList.add('change-number')
+                this.current_number_1 = document.createElement('span')
+                this.current_number_1.innerText = count_num(run.id, this._coordsElem)
+                this.current_number_1.id = 'current-number-'+index
+                this.current_number_1.classList.add('change-number')
             
-                run.prepend(span)                   
+                run.prepend(this.current_number_1)                   
             })
         }
         
-        sliderActive(coords_from_input, parse_num, step){
+        sliderFieldActive(coords_from_input, parse_num, step){
             this.field.addEventListener('click', (e)=>{
                 console.log(10)
                 if(!e.target.classList.contains('runner') && !e.target.classList.contains('change-number')){
-                    let lf = this._countMoveAt(e.target.parentNode.id, e.target.pageX, parse_num, step)
-                    if(typeof lf ==='number'){
-                        this._runs_array[0].style.left = lf
-                        let val = coords_from_input(lf, this._coordsElem)
-                        this._changeInputVal(val, 0)
+                    let len = this._returnRuns.length
+                        if(len > 1){
+                            let diff = (this._coordsElem.contain_1.right - e.clientX) < (this._coordsElem.contain_2.left - e.clientX)
+                            if(diff){
+                                let lf = this._countMoveAt(this._returnRuns[0].id, e.target.pageX, parse_num, step)
+
+                                this._runs_array[0].style.left = lf
+                                let val = coords_from_input(lf, this._coordsElem, len)
+                                this._changeInputVal(val, 0)
+                            }else{
+                                let lf = this._countMoveAt(this._returnRuns[1].id, e.target.pageX, parse_num, step)
+                                
+                                this._runs_array[1].style.left = lf
+                                let val = coords_from_input(lf, this._coordsElem, len)
+                                this._changeInputVal(val, 1)
+                            }
+                        }else{
+                            let lf = this._countMoveAt(this._returnRuns[0].id, e.target.pageX, parse_num, step)
+
+                            this._runs_array[0].style.left = lf
+                            let val = coords_from_input(lf, this._coordsElem, len)
+                            this._changeInputVal(val, 0)
+                            
+                        }
                     }
-                }
             })
         }
     
-        addRemoveNums(count_num){
+        _addRemoveNums(count_num){
             if(this.range_button.textContent === 'remove numbers'){
-                this.addNums(count_num)
+                this._addNums(count_num)
             }else{
                 this._returnRuns.forEach((run)=>{
                     if (run.firstChild.classList.contains('change-number')) run.removeChild(run.firstChild);
@@ -367,36 +405,32 @@ class View {
 
 class Controller{
         view: View;
-        model: Model;
-        min: number
-        max: number
-        step: number 
+        model: Model; 
+         
         constructor(view, model) {
             this.view = view
             this.model = model
-            this.min = 0
-            this.max = 100
-            this.step = 1
             
-            this.view.moveRuns(this.handleCountVal, this.handleParseNum, this.step)
+            this.view.moveRuns(this.handleCountVal, this.handleParseNum, this.model.step)
             this.view.bindChangeInputValue(this.handleCheckValue, this.handleCountRunCoords)
-            this.view.bindSlidersAdd(this.handleCountVal, this.handleCheckValue, this.handleParseNum, this.handleCountRunCoords, this.step)
+            this.view.bindSlidersAdd(this.handleCountVal, this.handleCheckValue, this.handleParseNum, this.handleCountRunCoords, this.model.step)
             this.view.bindAddLegend(this.handleCountVal)
+            this.view.sliderFieldActive(this.handleCountRunCoords, this.handleParseNum, this.model.step)
         }
         handleParseNum=(val)=>{
-            return this.model.parseNumber(val, this.step)
+            return this.model.parseNumber(val)
         }
         handleCountVal=(id, coords)=>{
-            return this.model.countNumber(id, coords, this.min, this.max, this.step)
+            return this.model.countNumber(id, coords)
         }
-        handleCheckValue=(id, coords, value)=>{
-            return this.model.checkValue(id, coords, this.min, this.max, this.step, value)
+        handleCheckValue=(id, coords, value, len)=>{
+            return this.model.checkValue(id, coords, value, len)
         }
         handleCountRunCoords=(val, coords)=>{
-            return this.model.countRunnersCoords(val, coords, this.min, this.max, this.step)
+            return this.model.countRunnersCoords(val, coords)
         }
-        handleSliderActive(){
-            this.view.sliderActive(this.handleCountRunCoords, this.handleParseNum, this.step)
+        handleFieldActive(){
+            this.view.sliderFieldActive(this.handleCountRunCoords, this.handleParseNum, this.model.step)
         }
 }
 
