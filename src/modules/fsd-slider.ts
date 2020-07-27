@@ -99,8 +99,8 @@ class View {
         }
         input_val_1 = 0
         input_val_2 = 100
-        _inputs_array: NodeListOf<Element>;
-        _runs_array: NodeListOf<Element>;
+        _inputs_array: HTMLInputElement[];
+        _runs_array: HTMLDivElement[];
 
     
         constructor() {
@@ -134,13 +134,12 @@ class View {
             this.run_contain_1.append(this.run_1)
             this.field.append(this.run_contain_1)
 
-            this.form = document.querySelector('.formEclectic')
-            this.form.append(this.interval_button, this.range_button, this.field, this.input_1)
+            this._runs_array = [this.run_contain_1]
+            this._inputs_array = [this.input_1]
+
+            this._asynCreateForm()
 
             this._setStartCoords()
-
-            this._runs_array = document.querySelectorAll('.run-container')
-            this._inputs_array= document.querySelectorAll('.input_for_slider')
         }
 
 
@@ -151,10 +150,6 @@ class View {
             }).then(
                 result => {
                     this.form = document.querySelector('.formEclectic')
-                    this.form.append(this.interval_button, this.range_button, this.field, this.input_1)
-                    
-                    console.log(this._runs_array, 15)
-                    console.log(this._returnRuns, 155)
                 }
             )
         }
@@ -286,14 +281,13 @@ class View {
             this.run_contain_2 = document.createElement('div')
             this.run_contain_2.classList.add('run-container')
             this.run_contain_2.id = 'run-contain-2'
-            this.run_contain_2.style = this.run_contain_1.style
             this.run_contain_2.style.right = (0).toString()
             this.run_2.classList.add('runner')
             this.run_2.id = 'runner-2'
-            this.run_2.value = this.input_val_2
-            this.run_2.style = this.run_1.style
+            this.run_2.innerText = (this.input_val_2).toString()
             this.run_contain_2.append(this.run_2)
             this.field.append(this.run_contain_2)
+            this._runs_array.push(this.run_contain_2)
         }
            
         _addRemoveRunner(): void{
@@ -301,7 +295,7 @@ class View {
                 this._addRunner()
             }
             else {
-                if(this.field.lastChild.id === 'run-contain-2') {
+                if((<HTMLDivElement>this.field.lastChild).id === 'run-contain-2') {
                     this.field.removeChild(this.field.lastChild);
                 }   
             }
@@ -311,9 +305,9 @@ class View {
             this.input_2 = document.createElement('input')
             this.input_2.classList.add('input_for_slider')
             this.input_2.id = 'input_for_2'
-            this.input_2.style = this.input_1.style
             this.input_2.style.left = (30).toString()
             this.form.append(this.input_2)
+            this._inputs_array.push(this.input_2)
         }
     
         _addRemoveInput(): void{
@@ -321,15 +315,8 @@ class View {
                 this._addInput()
             }
             else{
-                if(this.form.lastChild.id === 'input_for_2') this.form.removeChild(this.form.lastChild)
+                if((<HTMLInputElement>this.form.lastChild).id === 'input_for_2') this.form.removeChild(this.form.lastChild)
             }
-        }
-
-        _defineRuns(){
-            this._runs_array = document.querySelectorAll('.run-container')
-        }
-        _defineInputs(){
-            this._inputs_array = document.querySelectorAll('.input_for_slider')
         }
     
         bindSlidersAdd(count_val, check_val, parse_num, coords_from_input, step){
@@ -340,8 +327,6 @@ class View {
                 this._addRemoveRunner()
                 this._cleanCoords()
                 this._addRemoveInput()
-                this._defineRuns()
-                this._defineInputs()
                 this.moveRuns(count_val, parse_num, step)
                 this._addRemoveNums(count_val)
                 this.bindChangeInputValue(check_val, coords_from_input)
@@ -363,27 +348,27 @@ class View {
         sliderFieldActive(coords_from_input, parse_num, step){
             this.field.addEventListener('click', (e)=>{
                 console.log(10)
-                if(!e.target.classList.contains('runner') && !e.target.classList.contains('change-number')){
+                if(!(<HTMLSpanElement>e.target).classList.contains('runner') && !(<HTMLSpanElement>e.target).classList.contains('change-number')){
                     let len = this._returnRuns.length
                         if(len > 1){
                             let diff = (this._coordsElem.contain_1.right - e.clientX) < (this._coordsElem.contain_2.left - e.clientX)
                             if(diff){
-                                let lf = this._countMoveAt(this._returnRuns[0].id, e.target.pageX, parse_num, step)
+                                let lf = this._countMoveAt(this._returnRuns[0].id, e.pageX, parse_num, step)
 
-                                this._runs_array[0].style.left = lf
+                                this._runs_array[0].style.left = (lf).toString()
                                 let val = coords_from_input(lf, this._coordsElem, len)
                                 this._changeInputVal(val, 0)
                             }else{
-                                let lf = this._countMoveAt(this._returnRuns[1].id, e.target.pageX, parse_num, step)
+                                let lf = this._countMoveAt(this._returnRuns[1].id, e.pageX, parse_num, step)
                                 
-                                this._runs_array[1].style.left = lf
+                                this._runs_array[1].style.left = (lf).toString()
                                 let val = coords_from_input(lf, this._coordsElem, len)
                                 this._changeInputVal(val, 1)
                             }
                         }else{
-                            let lf = this._countMoveAt(this._returnRuns[0].id, e.target.pageX, parse_num, step)
+                            let lf = this._countMoveAt(this._returnRuns[0].id, e.pageX, parse_num, step)
 
-                            this._runs_array[0].style.left = lf
+                            this._runs_array[0].style.left = (lf).toString()
                             let val = coords_from_input(lf, this._coordsElem, len)
                             this._changeInputVal(val, 0)
                             
@@ -397,7 +382,7 @@ class View {
                 this._addNums(count_num)
             }else{
                 this._returnRuns.forEach((run)=>{
-                    if (run.firstChild.classList.contains('change-number')) run.removeChild(run.firstChild);
+                    if ((<HTMLSpanElement>run.firstChild).classList.contains('change-number')) run.removeChild(run.firstChild);
                 })
             }
         }

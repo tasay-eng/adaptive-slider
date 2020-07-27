@@ -2,16 +2,32 @@ const path = require('path')
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const {CleanWebpackPlugin} = require('clean-webpack-plugin')
 module.exports = {
   entry: {
     app: './src/app.ts'
   },
+  output: {
+    filename: '[name].js',
+    path: path.resolve(__dirname, './docs'),
+    publicPath: './'
+  },
   devtool: 'cheap-module-eval-source-map',
+  devServer: {
+    contentBase: './docs',
+    hot: true,
+    stats: 'errors-only',
+  },
   module: {
     rules: [
       {
+        test: /\.js?$/,
+        use: ['babel-loader'],
+        exclude: /node_modules/,
+      },
+      {
         test: /\.ts?$/,
-        use: 'babel-loader',
+        use: ['ts-loader'],
         exclude: /node_modules/,
       },
       {
@@ -45,17 +61,10 @@ module.exports = {
   resolve: {
     extensions: [ '.tsx', '.ts', '.js' ],
   },
-  output: {
-    filename: '[name].js',
-    path: path.resolve(__dirname, './docs'),
-    publicPath: './'
-  },
-  devServer: {
-    overlay: true,
-    stats: 'errors-only'
-  },
   plugins: [
+    new CleanWebpackPlugin(),
     new webpack.SourceMapDevToolPlugin({}),
+    new webpack.HotModuleReplacementPlugin(),
     new HtmlWebpackPlugin({
       hash: false,
       template: './src/modules/fsd-slider.pug',

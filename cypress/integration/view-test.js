@@ -2,7 +2,7 @@ import {Controller, Model, View} from '../../src/modules/fsd-slider';
 let slider = new Controller(new View(), new Model());
 describe('View', ()=>{
   beforeEach(() => {
-    cy.visit('http://localhost:8080/docs/')
+    cy.visit('http://localhost:8080')
   })
   it('Can move runner-1', ()=>{
       let lf_1 = slider.view.run_contain_1.left
